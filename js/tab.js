@@ -100,4 +100,155 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     setClock('.timer', deadline);
+
+    // Modal
+
+    //document.querySelectorAll('[data-foo]');
+    const modal = document.querySelector('.modal');
+    const modalBtn = document.querySelectorAll('[data-modal]');
+
+    modalBtn.forEach((elem) => {
+        elem.addEventListener('click', openModal);
+    });
+
+    // function showModal() {
+    //     setTimeout(change, 5000);
+
+    //     function change() {
+    //         modal.style.display = 'block';
+    //     } 
+    // }
+
+    function openModal() {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        clearInterval(modalTimerId);
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        modal.style.display = '';
+        document.body.style.overflow = '';
+    }
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.getAttribute('data-close') == '') {
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === "Escape" && modal.style.display == 'block') {
+            closeModal();
+        }
+    });
+
+    const modalTimerId = setTimeout(openModal, 50000);
+
+    function showModalByScroll() {
+        if (window.pageYOffset + document.documentElement.clientHeight >= document.documentElement.scrollHeight - 1) {
+            openModal();
+            window.removeEventListener('scroll', showModalByScroll);
+        }
+    }
+
+    window.addEventListener('scroll', showModalByScroll);
+
+
+    // Forms
+
+    const forms = document.querySelectorAll('form');
+
+    const message = {
+        loading: 'img/spinner.svg',
+        success: 'Спасибо! Скоро мы с вами свяжемся',
+        failure: 'Что-то пошло не так...'
+    };
+
+    forms.forEach((elem) => {
+        postData(elem);
+    });
+
+    function postData(form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const statusMessage = document.createElement('div');
+            statusMessage.classList.add('status');
+            statusMessage.src = message.loading;
+            statusMessage.style.cssText = `
+                display: block;
+                margin: 0 auto;
+            `;
+            form.insertAdjacentElement('afterend', statusMessage);
+
+            const request = new XMLHttpRequest();
+            request.open('POST', 'serve.php');
+
+            request.setRequestHeader('Content-type', 'application/json');
+            const formData = new FormData(form);
+
+            const object = {};
+            formData.forEach((value, key) => {
+                object[key] = value;
+            });
+
+            const json = JSON.stringify(object);
+
+            request.send(json);
+
+
+            request.addEventListener('load', () => {
+                if (request.status === 200) {
+                    console.log(request.response);
+                    showThanksModal(message.success);
+                    form.reset();
+                    statusMessage.remove();
+                } else {
+                    showThanksModal(message.failure);
+                }
+            });
+        });
+    }
+
+    function showThanksModal(message) {
+        const prevModalDialog = document.querySelector('.modal__dialog');
+
+        prevModalDialog.style.display = 'none';
+        openModal();
+
+        const thanksModal = document.createElement('div');
+        thanksModal.classList.add('modal__dialog');
+        thanksModal.innerHTML = `
+            <div class="modal__content ">
+                <div class="modal__close" data-close>×</div>
+                <div class="modal__title">${message}</div>
+            </div>>
+        `;
+
+        document.querySelector('.modal').append(thanksModal);
+        setTimeout(() => {
+            thanksModal.remove();
+            prevModalDialog.classList.add('show');
+            // prevModalDialog.classList.remove('hide');
+            prevModalDialog.style.display = '';
+            closeModal();
+        }, 4000);
+    }
+
+    // GET - запрос
+    // fetch('https://jsonplaceholder.typicode.com/todos/1')
+    //     .then(response => response.json()) // ответ от сервера
+    //     .then(json => console.log(json));
+
+    // POST - запрос
+    // fetch('https://jsonplaceholder.typicode.com/posts', {
+    //     method: "POST",
+    //     body: JSON.stringify({name: 'Alex'}),
+    //     headers: {
+    //         'Content-type': 'application/json'
+    //     }
+    // })
+    //     .then(response => response.json())
+    //     .then(json => console.log(json));
 });
